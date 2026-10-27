@@ -1,0 +1,27 @@
+{
+  "name": "roblox-supplyz",
+  "version": "2.0.0",
+  "description": "Roblox Supplyz – Storefront com Google Login, PIX via Mercado Pago, Admin Panel, Licenças",
+  "main": "server.js",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.7.0",
+    "dotenv": "^16.4.0",
+    "ejs": "^3.1.10",
+    "express": "^4.21.0",
+    "express-rate-limit": "^7.5.0",
+    "express-session": "^1.18.0",
+    "helmet": "^8.3.0",
+    "mercadopago": "^2.0.15",
+    "multer": "^2.5.0",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0",
+    "uuid": "^9.0.0"
+  }
+}

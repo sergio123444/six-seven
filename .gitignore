@@ -1,0 +1,8 @@
+node_modules/
+.env
+
+# Banco de dados — dados de clientes não vão pro git
+db/supplyz.db
+db/supplyz.db-wal
+db/supplyz.db-shm
+

@@ -1,0 +1,19 @@
+<!-- Chat cliente ↔ vendedor (compartilhado: loja e Minha Conta) -->
+<div id="chat-drawer" class="chat-drawer" style="display:none;">
+  <div class="chat-head">
+    <div class="chat-head-info">
+      <span class="chat-title">Chat com o vendedor</span>
+      <span class="chat-sub" id="chat-sub">Carregando…</span>
+    </div>
+    <button class="chat-close" onclick="closeChat()" title="Fechar">✕</button>
+  </div>
+  <div class="chat-discord-line">
+    Sem resposta aqui? Chama no Discord:
+    <button class="chat-discord-user" onclick="copyDiscord(this)">freefitelalao</button>
+  </div>
+  <div id="chat-messages" class="chat-messages"></div>
+  <div class="chat-input-row">
+    <input type="text" id="chat-input" class="chat-input" placeholder="Digite sua mensagem…" maxlength="2000">
+    <button id="chat-send" class="chat-send" onclick="chatSend()">Enviar</button>
+  </div>
+</div>

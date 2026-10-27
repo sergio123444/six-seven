@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Roblox Supplyz — Ryu Hub</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Orbitron:wght@700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+<%
+  const findProduct = (pid) => (products || []).find(p => p.id === pid) || null;
+  const prodMonthly  = findProduct('ryu-hub-monthly');
+  const prodLifetime = findProduct('ryu-hub-lifetime');
+  const fmtBRL = (v) => 'R$ ' + Number(v).toFixed(2).replace('.', ',');
+
+  // Identidade visual de add-ons conhecidos (produto novo do banco cai no fallback 🧩)
+  const addonStyles = {
+    'wave-executor':  { emoji: '🌊', short: 'WAVE',  color: '#22d3ee', badge: 'ATUALIZADO',
+                        desc: 'Executor Level 8 com 99.9% uptime. Suporta mobile e PC. Injeção rápida.' },
+    'delta-executor': { emoji: '🔺', short: 'DELTA', color: '#f97316', badge: 'HOT',
+                        desc: 'Executor multi-plataforma poderoso. Script hub integrado, UI limpa e atualizações rápidas.' },
+    'real-executor':  { emoji: '⚡', short: 'REAL',  color: '#3b82f6', badge: 'NOVO',
+                        desc: 'Leve e rápido. Perfeito para iniciantes. Versão gratuita disponível.' }
+  };
+  const heroIds = ['ryu-hub-monthly', 'ryu-hub-lifetime', 'roblox-account'];
+
+  // Variantes: 1 card por plan_group; as outras viram opções no step de plano
+  const planGroups = {};
+  (products || []).forEach(p => {
+    if (p.plan_group && p.active) (planGroups[p.plan_group] = planGroups[p.plan_group] || []).push(p);
+  });
+  const seenGroups = new Set();
+  const addonList = []; // [{ rep, variants }] — sem mutar o objeto de products (o BOOT faz stringify)
+  (products || []).forEach(p => {
+    if (heroIds.includes(p.id) || !p.active) return;
+    if (p.plan_group && planGroups[p.plan_group] && planGroups[p.plan_group].length > 1) {
+      if (seenGroups.has(p.plan_group)) return;
+      seenGroups.add(p.plan_group);
+      const variants = [...planGroups[p.plan_group]].sort((a, b) => a.price - b.price);
+      addonList.push({ rep: variants[0], variants });
+      return;
+    }
+    addonList.push({ rep: p, variants: null });
+  });
+
+  const upsellProduct = findProduct('roblox-account');
+
+  const isOut = (p) => p.key_pool ? (p.available || 0) === 0 : (p.stock === 0);
+%>
+
+  <!-- ==================== HEADER / NAV ==================== -->
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="/" class="logo">
+        <div class="logo-icon">RS</div>
+        <span class="logo-text">ROBLOX SUPPLYZ</span>
+      </a>
+
+      <nav class="nav">
+        <a href="/" class="nav-link active">Store</a>
+        <a href="#addons" class="nav-link">Produtos</a>
+        <a href="#" class="nav-link">Suporte</a>
+        <a href="#" class="nav-link">FAQ</a>
+        <div class="nav-divider"></div>
+
+        <button class="cart-btn" onclick="toggleCart(true)" title="Carrinho">🛒<span id="cart-count" class="cart-badge" style="display:none;">0</span></button>
+
+        <% if (user && user.role === 'admin') { %>
+          <a href="/admin" class="nav-link">Admin</a>
+        <% } %>
+
+        <% if (user) { %>
+          <!-- Logado -->
+          <div class="user-menu">
+            <img src="<%= user.avatar %>" alt="" class="user-avatar" referrerpolicy="no-referrer">
+            <div class="user-info">
+              <span class="user-name"><%= user.name %></span>
+              <span class="user-email"><%= user.email %></span>
+            </div>
+            <a href="/conta" class="btn-sm btn-outline">Minha Conta</a>
+            <a href="/auth/logout" class="btn-sm btn-outline">Sair</a>
+          </div>
+        <% } else { %>
+          <!-- Não logado -->
+          <a href="/auth/google" class="btn-google">
+            <svg width="16" height="16" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59a14.5 14.5 0 0 1 0-9.18l-7.98-6.19a24.01 24.01 0 0 0 0 21.56l7.98-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+            Entrar com Google
+          </a>
+        <% } %>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ==================== MAIN ==================== -->
+  <main class="container main-content">
+
+    <!-- BREADCRUMB -->
+    <div class="breadcrumb">
+      <a href="/">Home</a> <span>›</span>
+      <a href="/">Scripts</a> <span>›</span>
+      <span class="current">Ryu Hub</span>
+    </div>
+
+    <!-- ==================== PRODUCT HERO ==================== -->
+    <div class="product-grid">
+
+      <!-- LEFT -->
+      <div class="product-left">
+        <!-- Hero Image -->
+        <div class="hero-image gradient-border">
+          <div class="hero-inner">
+            <div class="hero-grid-overlay"></div>
+            <div class="hero-glow"></div>
+            <div class="hero-content">
+              <div class="hero-title shimmer-text">RYU HUB</div>
+              <div class="hero-subtitle">Grand Piece Online Script</div>
+            </div>
+          </div>
+          <div class="badge-online"><span class="pulse-dot"></span> ONLINE</div>
+          <div class="badge-version">v3.2.1</div>
+        </div>
+
+        <!-- Info -->
+        <div class="product-info">
+          <div class="product-title-row">
+            <h1 class="font-display product-title">RYU HUB</h1>
+            <span class="badge-bestseller">BEST SELLER</span>
+          </div>
+          <p class="product-desc">
+            O script #1 para Grand Piece Online. Auto-farm, auto-quest, teleport, ESP, combate aprimorado e 50+ recursos premium — tudo indetectável com UI limpa. Atualizado semanalmente.
+          </p>
+        </div>
+
+        <!-- Feature Callouts -->
+        <div class="features-grid">
+          <div class="feature-card gradient-border">
+            <div class="feature-icon">⚡</div>
+            <div class="feature-title">Entrega Instantânea</div>
+            <div class="feature-desc">Key enviada na hora</div>
+          </div>
+          <div class="feature-card gradient-border">
+            <div class="feature-icon">🔒</div>
+            <div class="feature-title">Pagamento Seguro</div>
+            <div class="feature-desc">PIX criptografado</div>
+          </div>
+          <div class="feature-card gradient-border">
+            <div class="feature-icon">🛡️</div>
+            <div class="feature-title">Indetectável</div>
+            <div class="feature-desc">Proteção anti-ban</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: PRICING SIDEBAR -->
+      <div class="product-right">
+        <div class="pricing-card gradient-border">
+          <div class="pricing-label">Selecione a Licença</div>
+
+          <!-- Monthly -->
+          <div id="plan-monthly" class="plan-option selected" onclick="selectPlan('monthly')">
+            <div class="plan-left">
+              <div id="radio-monthly" class="plan-radio checked"><div class="radio-dot"></div></div>
+              <div>
+                <div class="plan-name">Mensal</div>
+                <div class="plan-period">Renova a cada 30 dias</div>
+              </div>
+            </div>
+            <div class="plan-price-box">
+              <div class="plan-price"><%= prodMonthly ? fmtBRL(prodMonthly.price) : 'R$ 49,90' %></div>
+              <div class="plan-price-sub">/mês</div>
+            </div>
+          </div>
+
+          <!-- Lifetime -->
+          <div id="plan-lifetime" class="plan-option" onclick="selectPlan('lifetime')">
+            <div class="plan-left">
+              <div id="radio-lifetime" class="plan-radio"><div class="radio-dot"></div></div>
+              <div>
+                <div class="plan-name">Lifetime</div>
+                <div class="plan-period">Pagamento único</div>
+              </div>
+            </div>
+            <div class="plan-price-box">
+              <div class="plan-price"><%= prodLifetime ? fmtBRL(prodLifetime.price) : 'R$ 149,90' %></div>
+              <div class="plan-price-sub">único</div>
+            </div>
+            <div class="badge-save">ECONOMIZE 75%</div>
+          </div>
+
+          <div class="divider"></div>
+
+          <!-- Quantity -->
+          <div class="qty-row">
+            <span class="qty-label">Quantidade</span>
+            <div class="qty-controls">
+              <button class="qty-btn" onclick="updateQty(-1)">−</button>
+              <span id="qty-display" class="qty-value">1</span>
+              <button class="qty-btn" onclick="updateQty(1)">+</button>
+            </div>
+          </div>
+
+          <!-- Total -->
+          <div class="total-row">
+            <span class="total-label">Total</span>
+            <span id="total-display" class="total-value"><%= prodMonthly ? fmtBRL(prodMonthly.price) : 'R$ 49,90' %></span>
+          </div>
+
+          <!-- PIX Button -->
+          <button id="buy-button" class="buy-btn" onclick="handlePixPayment()">
+            <svg width="20" height="20" viewBox="0 0 512 512" fill="currentColor" style="flex-shrink:0;">
+              <path d="M242.4 292.5C247.8 287.1 257.1 287.1 262.5 292.5l67.5 67.5c2.1 2.1 4.6 3.2 7.1 3.2s5-1.1 7.1-3.2l104.3-104.3c14.7-14.7 14.7-38.6 0-53.3L376.1 130.1c-14.7-14.7-38.6-14.7-53.3 0L252.5 200.5l-70.3-70.3c-14.7-14.7-38.6-14.7-53.3 0L24.6 234.5c-14.7 14.7-14.7 38.6 0 53.3l104.3 104.3c2.1 2.1 4.6 3.2 7.1 3.2s5-1.1 7.1-3.2l67.5-67.5c5.4-5.5 5.4-14.3 0-19.7l-30.4-30.4c-5.4-5.4-5.4-14.2 0-19.6l62.1-62.1z"/>
+            </svg>
+            Pagar com PIX
+          </button>
+          <button class="btn-chat" onclick="addToCartPlan()">🛒 Adicionar ao carrinho</button>
+
+          <% if (!user) { %>
+          <div class="login-hint">
+            <a href="/auth/google">Faça login</a> para checkout mais rápido
+          </div>
+          <% } %>
+
+          <!-- Trust -->
+          <div class="trust-row">
+            <span>🔒 SSL</span>
+            <span>✓ <%= (totalSales || 0).toLocaleString('pt-BR') %>+ vendidos</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== PIX MODAL ==================== -->
+    <div id="pix-modal" class="modal-overlay" style="display:none;">
+      <div class="modal-card gradient-border">
+        <button class="modal-close" onclick="closePixModal()">✕</button>
+
+        <!-- Step 1: Plano (só aparece quando o produto tem variantes) -->
+        <div id="pix-step-plan" class="pix-step" style="display:none;">
+          <div class="modal-icon">🧩</div>
+          <h3 class="modal-title">Escolha o plano</h3>
+          <p class="modal-desc">Selecione a duração da licença:</p>
+          <div id="plan-options" class="plan-options"></div>
+          <button class="buy-btn" id="plan-confirm-btn" style="margin-top:12px;">Confirmar</button>
+        </div>
+
+        <!-- Step 2: Email + Cupom -->
+        <div id="pix-step-email" class="pix-step">
+          <div class="modal-icon">📧</div>
+          <h3 class="modal-title">Informe seu e-mail</h3>
+          <p class="modal-desc">Obrigatório pelo Mercado Pago para gerar o PIX.</p>
+          <input type="email" id="pix-email" class="input-field"
+                 placeholder="seu@email.com"
+                 value="<%= user ? user.email : '' %>">
+          <div class="coupon-row">
+            <input type="text" id="pix-coupon" class="input-field" placeholder="Cupom (opcional)" maxlength="20">
+            <button class="btn-copy" id="coupon-apply-btn" onclick="applyCoupon()">Aplicar</button>
+          </div>
+          <div id="coupon-feedback" class="coupon-feedback"></div>
+          <button class="buy-btn" onclick="submitPixEmail(this)" style="margin-top:12px;">Gerar PIX</button>
+        </div>
+
+        <!-- Step 2: QR Code -->
+        <div id="pix-step-qr" class="pix-step" style="display:none;">
+          <div class="modal-icon">📱</div>
+          <h3 class="modal-title">Escaneie o QR Code</h3>
+          <p class="modal-desc" id="pix-desc-text"></p>
+
+          <div id="pix-qr-image" class="pix-qr-container"></div>
+
+          <div class="pix-copy-section">
+            <label class="pix-copy-label">PIX Copia e Cola</label>
+            <div class="pix-copy-row">
+              <input type="text" id="pix-code" class="input-field" readonly>
+              <button class="btn-copy" onclick="copyPixCode(this)">Copiar</button>
+            </div>
+          </div>
+
+          <div id="pix-status" class="pix-status">
+            <span class="pulse-dot"></span> Aguardando pagamento...
+          </div>
+        </div>
+
+        <!-- Step 3: Approved -->
+        <div id="pix-step-done" class="pix-step" style="display:none;">
+          <div class="modal-icon" style="font-size:48px;">✅</div>
+          <h3 class="modal-title" style="color: #22c55e;">Pagamento Aprovado!</h3>
+          <p class="modal-desc">Sua chave de licença — guarde com cuidado:</p>
+          <div id="license-keys" class="license-keys"></div>
+          <button class="btn-chat" onclick="openChat(currentOrderId, currentLicenseToken)" style="margin-bottom:10px;">💬 Falar com o vendedor</button>
+          <button class="buy-btn" onclick="closePixModal()" style="margin-top:12px; background: linear-gradient(135deg, #22c55e, #16a34a);">Fechar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== UPSELL ==================== -->
+    <% if (upsellProduct && upsellProduct.active) { %>
+    <div class="section">
+      <div class="section-label">💎 &nbsp;Adicionar</div>
+      <div class="upsell-card gradient-border card-lift">
+        <div class="upsell-left">
+          <div class="upsell-icon">👤</div>
+          <div>
+            <div class="upsell-name"><%= upsellProduct.name %> <span class="badge-popular">POPULAR</span></div>
+            <div class="upsell-desc">Conta verificada e envelhecida, pronta para uso. Perfeita para usar com Ryu Hub.</div>
+          </div>
+        </div>
+        <div class="upsell-right">
+          <div class="upsell-price-box">
+            <div class="upsell-price"><%= fmtBRL(upsellProduct.price) %></div>
+            <div class="upsell-price-sub">cada</div>
+          </div>
+          <% const upsellOut = isOut(upsellProduct); %>
+          <% if (upsellOut) { %>
+            <button class="btn-add" disabled style="opacity:.5; cursor:not-allowed;">Esgotado</button>
+          <% } else { %>
+            <button class="btn-cart-add btn-cart-add-lg" onclick="addToCart('<%= upsellProduct.id %>')" title="Adicionar ao carrinho">🛒</button>
+            <button class="btn-add" onclick="buyProduct('<%= upsellProduct.id %>')">Comprar agora</button>
+          <% } %>
+        </div>
+      </div>
+    </div>
+    <% } %>
+
+    <!-- ==================== RECOMMENDED ADD-ONS ==================== -->
+    <div class="section" id="addons">
+      <div class="section-header">
+        <div>
+          <h2 class="font-display section-title">ADD-ONS RECOMENDADOS</h2>
+          <p class="section-subtitle">Executores compatíveis com Ryu Hub</p>
+        </div>
+        <a href="#" class="link-arrow">Ver Todos →</a>
+      </div>
+
+      <div class="addons-grid">
+
+        <% addonList.forEach(function(entry) {
+             const p = entry.rep;
+             const variants = entry.variants;
+             const st = addonStyles[p.id] || addonStyles[(p.plan_group || '').split('-')[0] + '-executor'] || {
+               emoji: '🧩', short: p.name.toUpperCase().slice(0, 8), color: '#a855f7',
+               badge: 'NOVO', desc: 'Produto digital com entrega instantânea de key.'
+             };
+             const esgotado = variants ? variants.every(isOut) : isOut(p);
+        %>
+        <div class="addon-card gradient-border card-lift">
+          <div class="addon-image"<% if (p.image) { %> style="background-image: url('<%= p.image %>'); background-size: cover; background-position: center;"<% } %>>
+            <% if (!p.image) { %>
+            <div class="addon-glow" style="background: radial-gradient(circle at 30% 40%, <%= st.color %>1f, transparent 60%);"></div>
+            <div class="addon-image-content">
+              <div class="addon-emoji"><%= st.emoji %></div>
+              <div class="addon-image-name" style="color: <%= st.color %>;"><%= st.short %></div>
+            </div>
+            <% } %>
+            <div class="addon-badge" style="background: <%= esgotado ? 'rgba(239,68,68,0.15)' : st.color + '26' %>; border-color: <%= esgotado ? 'rgba(239,68,68,0.25)' : st.color + '40' %>; color: <%= esgotado ? '#ef4444' : st.color %>;"><%= esgotado ? 'ESGOTADO' : (variants ? variants.length + ' PLANOS' : st.badge) %></div>
+          </div>
+          <div class="addon-body">
+            <div class="addon-name"><%= p.name %></div>
+            <p class="addon-desc"><%= p.description || st.desc %></p>
+            <div class="addon-footer">
+              <div class="addon-price-col">
+                <span class="addon-price"><% if (variants) { %><span class="addon-price-sub">a partir de </span><% } %><%= fmtBRL(p.price) %></span>
+                <% if ((p.sales || 0) > 0) { %><span class="addon-sales"><%= p.sales %> vendido<%= p.sales !== 1 ? 's' : '' %></span><% } %>
+              </div>
+              <div class="addon-actions">
+                <% if (esgotado) { %>
+                  <button class="btn-view-plans" disabled style="opacity:.5; cursor:not-allowed;">Esgotado</button>
+                <% } else { %>
+                  <button class="btn-cart-add" onclick="addToCart('<%= p.id %>')" title="Adicionar ao carrinho">🛒</button>
+                  <button class="btn-view-plans" onclick="buyProduct('<%= p.id %>')">Comprar</button>
+                <% } %>
+              </div>
+            </div>
+          </div>
+        </div>
+        <% }); %>
+
+        <% if (addonList.length === 0) { %>
+          <div class="addon-card gradient-border" style="padding:24px; text-align:center; color:var(--text-muted); font-size:12px;">
+            Nenhum add-on disponível no momento.
+          </div>
+        <% } %>
+
+      </div>
+    </div>
+
+    <!-- ==================== PAYMENT METHODS ==================== -->
+    <div class="payment-methods">
+      <div class="payment-label">Métodos de Pagamento Aceitos</div>
+      <div class="payment-icons">
+        <div class="pay-icon"><span style="color:#22c55e; font-weight:800; font-size:9px;">PIX</span></div>
+        <div class="pay-icon"><span>VISA</span></div>
+        <div class="pay-icon"><span>MC</span></div>
+        <div class="pay-icon"><span style="font-size:8px;">AMEX</span></div>
+        <div class="pay-icon" style="width:56px;"><span style="font-size:8px;">MERCADO<br>PAGO</span></div>
+        <div class="pay-icon" style="font-size:8px;"><span>BOLETO</span></div>
+        <div class="pay-icon" style="font-size:8px;"><span>CRYPTO</span></div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ==================== FOOTER ==================== -->
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div class="footer-left">
+        <span>Powered by</span>
+        <span class="footer-brand">Roblox Supplyz</span>
+        <span class="footer-dot">•</span>
+        <span>© 2026</span>
+      </div>
+      <div class="footer-links">
+        <a href="#">Termos</a>
+        <a href="#">Privacidade</a>
+        <a href="#">Contato</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ==================== COOKIE NOTICE ==================== -->
+  <div id="cookie-bar" class="cookie-bar">
+    <div class="cookie-text">
+      <span>🍪</span>
+      <span>Usamos cookies para melhorar sua experiência. Ao continuar, você concorda com nossa <a href="#">Política de Cookies</a>.</span>
+    </div>
+    <div class="cookie-actions">
+      <button onclick="document.getElementById('cookie-bar').style.display='none'" class="btn-sm btn-outline">Recusar</button>
+      <button onclick="document.getElementById('cookie-bar').style.display='none'" class="btn-sm btn-primary">Aceitar</button>
+    </div>
+  </div>
+
+  <!-- ==================== CART DRAWER ==================== -->
+  <div id="cart-drawer" style="display:none;">
+    <div class="chat-head">
+      <span>🛒 CARRINHO</span>
+      <button class="chat-close" onclick="toggleCart(false)">✕</button>
+    </div>
+    <div id="cart-items" class="cart-items"></div>
+    <div class="cart-footer">
+      <div class="cart-subtotal">
+        <span>Subtotal</span>
+        <span id="cart-total">R$ 0,00</span>
+      </div>
+      <button class="buy-btn" id="cart-checkout-btn" onclick="checkoutCart()">Finalizar com PIX</button>
+    </div>
+  </div>
+
+  <script>
+    window.BOOT = { products: <%- JSON.stringify(products).replace(/</g, '\\u003c') %> };
+  </script>
+  <script src="/js/app.js"></script>
+  <%- include('partials/chat-widget') %>
+  <script src="/js/chat.js"></script>
+</body>
+</html>

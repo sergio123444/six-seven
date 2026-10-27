@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minha Conta — Roblox Supplyz</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Orbitron:wght@700;800;900&display=swap" rel="stylesheet">
+  <style>
+    .conta-head { margin-bottom: 28px; }
+    .conta-title { font-size: 22px; font-weight: 800; letter-spacing: 0.04em; }
+    .conta-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+    .conta-table { border-radius: 12px; overflow: hidden; overflow-x: auto; }
+    .conta-table table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .conta-table thead th {
+      background: var(--bg-deep); padding: 10px 14px; text-align: left;
+      font-size: 10px; font-weight: 700; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: 0.08em;
+      border-bottom: 1px solid var(--border-dim); white-space: nowrap;
+    }
+    .conta-table tbody td {
+      padding: 10px 14px; border-bottom: 1px solid var(--border-dim);
+      color: var(--text-secondary); vertical-align: middle;
+    }
+    .conta-table tbody tr:last-child td { border-bottom: none; }
+    .conta-table tbody tr:hover { background: rgba(59,130,246,0.03); }
+    .conta-empty {
+      background: var(--bg-card); border: 1px solid var(--border-dim);
+      border-radius: 12px; padding: 32px 24px;
+      text-align: center; color: var(--text-muted); font-size: 13px;
+    }
+    .conta-key {
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 12px; font-weight: 700; color: var(--accent-cyan);
+      letter-spacing: 0.04em; word-break: break-all;
+    }
+    .conta-badge {
+      display: inline-block; padding: 2px 8px; border-radius: 4px;
+      font-size: 10px; font-weight: 700; letter-spacing: 0.03em;
+      border: 1px solid transparent; text-transform: uppercase; white-space: nowrap;
+    }
+    .cb-active    { background: rgba(34,197,94,0.12);  border-color: rgba(34,197,94,0.3);  color: var(--accent-green); }
+    .cb-approved  { background: rgba(34,197,94,0.12);  border-color: rgba(34,197,94,0.3);  color: var(--accent-green); }
+    .cb-pending   { background: rgba(249,115,22,0.12); border-color: rgba(249,115,22,0.3); color: var(--accent-orange); }
+    .cb-rejected  { background: rgba(239,68,68,0.12);  border-color: rgba(239,68,68,0.3);  color: #ef4444; }
+    .cb-cancelled { background: rgba(136,150,179,0.12);border-color: rgba(136,150,179,0.3);color: var(--text-secondary); }
+    .cb-refunded  { background: rgba(168,85,247,0.12); border-color: rgba(168,85,247,0.3); color: var(--accent-purple); }
+    .cb-revoked   { background: rgba(239,68,68,0.12);  border-color: rgba(239,68,68,0.3);  color: #ef4444; }
+    .cb-expired   { background: rgba(136,150,179,0.12);border-color: rgba(136,150,179,0.3);color: var(--text-secondary); }
+    .conta-id { font-weight: 700; color: var(--text-primary); }
+    .conta-money { font-weight: 700; color: var(--text-primary); white-space: nowrap; }
+    .conta-date { font-size: 11px; white-space: nowrap; }
+    .conta-hint {
+      font-size: 11px; color: var(--text-muted); text-align: center;
+      margin-top: 28px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==================== HEADER ==================== -->
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="/" class="logo">
+        <div class="logo-icon">RS</div>
+        <span class="logo-text">ROBLOX SUPPLYZ</span>
+      </a>
+
+      <nav class="nav">
+        <a href="/" class="nav-link">← Store</a>
+        <div class="nav-divider"></div>
+
+        <div class="user-menu">
+          <img src="<%= user.avatar %>" alt="" class="user-avatar" referrerpolicy="no-referrer">
+          <div class="user-info">
+            <span class="user-name"><%= user.name %></span>
+            <span class="user-email"><%= user.email %></span>
+          </div>
+          <a href="/auth/logout" class="btn-sm btn-outline">Sair</a>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ==================== MAIN ==================== -->
+  <main class="container main-content">
+
+    <div class="conta-head">
+      <h1 class="font-display conta-title">MINHA CONTA</h1>
+      <p class="conta-sub"><%= user.email %></p>
+    </div>
+
+    <!-- ==================== MINHAS KEYS ==================== -->
+    <div class="section">
+      <div class="section-header">
+        <div>
+          <h2 class="font-display section-title">MINHAS KEYS</h2>
+          <p class="section-subtitle"><%= licenses.length %> licença(s) nesta conta</p>
+        </div>
+      </div>
+
+      <% if (licenses.length === 0) { %>
+        <div class="conta-empty">Nenhuma key ainda — suas licenças aparecem aqui logo após o PIX aprovar.</div>
+      <% } else { %>
+        <div class="conta-table gradient-border">
+          <table>
+            <thead>
+              <tr><th>Key</th><th>Produto</th><th>Status</th><th>Expira</th><th></th></tr>
+            </thead>
+            <tbody>
+              <% licenses.forEach(function(l) { %>
+                <tr>
+                  <td><code class="conta-key"><%= l.license_key %></code></td>
+                  <td><%= l.product_name %></td>
+                  <td><span class="conta-badge cb-<%= l.status %>"><%= l.status %></span></td>
+                  <td class="conta-date"><%= l.expires_at ? new Date(l.expires_at).toLocaleDateString('pt-BR') : 'Lifetime' %></td>
+                  <td>
+                    <button class="btn-sm btn-primary" onclick="copyKey('<%= l.license_key %>', this)">Copiar</button>
+                  </td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </div>
+
+    <!-- ==================== MEUS PEDIDOS ==================== -->
+    <div class="section">
+      <div class="section-header">
+        <div>
+          <h2 class="font-display section-title">MEUS PEDIDOS</h2>
+          <p class="section-subtitle">Histórico completo de compras</p>
+        </div>
+      </div>
+
+      <% if (orders.length === 0) { %>
+        <div class="conta-empty">Nenhum pedido ainda.</div>
+      <% } else { %>
+        <div class="conta-table gradient-border">
+          <table>
+            <thead>
+              <tr><th>ID</th><th>Produto</th><th>Qtd</th><th>Total</th><th>Status</th><th>Data</th><th></th></tr>
+            </thead>
+            <tbody>
+              <% orders.forEach(function(o) { %>
+                <tr>
+                  <td class="conta-id">#<%= o.id %></td>
+                  <td><%= o.description || o.product_name %></td>
+                  <td><%= o.quantity %></td>
+                  <td class="conta-money">R$ <%= o.total.toFixed(2).replace('.', ',') %></td>
+                  <td><span class="conta-badge cb-<%= o.status %>"><%= o.status %></span></td>
+                  <td class="conta-date"><%= String(o.created_at).slice(0, 10).split('-').reverse().join('/') %></td>
+                  <td>
+                    <% if (o.status === 'approved') { %>
+                      <button class="btn-sm btn-outline" onclick="openChat(<%= o.id %>, '')">💬 Chat</button>
+                    <% } %>
+                  </td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </div>
+
+    <p class="conta-hint">Perdeu a tela de entrega? Todas as keys desta conta ficam salvas aqui.</p>
+
+  </main>
+
+  <!-- ==================== FOOTER ==================== -->
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div class="footer-left">
+        <span>Powered by</span>
+        <span class="footer-brand">Roblox Supplyz</span>
+        <span class="footer-dot">•</span>
+        <span>© 2026</span>
+      </div>
+      <div class="footer-links">
+        <a href="#">Termos</a>
+        <a href="#">Privacidade</a>
+        <a href="#">Contato</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    function copyKey(key, btn) {
+      navigator.clipboard.writeText(key).then(() => {
+        const original = btn.textContent;
+        btn.textContent = 'Copiado!';
+        setTimeout(() => { btn.textContent = original; }, 2000);
+      });
+    }
+  </script>
+  <%- include('partials/chat-widget') %>
+  <script src="/js/chat.js"></script>
+</body>
+</html>
